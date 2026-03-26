@@ -1,0 +1,19 @@
+/* ── Global Error Handler ── */
+
+function errorHandler(err, req, res, _next) {
+  const status = err.status || 500;
+  const message = err.message || "Internal server error";
+
+  if (process.env.NODE_ENV !== "production") {
+    console.error(`[ERROR] ${req.method} ${req.path} — ${message}`);
+    if (err.stack) console.error(err.stack);
+  }
+
+  res.status(status).json({
+    error: true,
+    message,
+    ...(process.env.NODE_ENV !== "production" && { path: req.path }),
+  });
+}
+
+module.exports = { errorHandler };

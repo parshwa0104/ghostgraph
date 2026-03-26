@@ -1,0 +1,116 @@
+[
+  {
+    "id": "log-1774527304501-hr9nbi",
+    "ts": "2026-03-26T12:15:04.501Z",
+    "type": "encryption",
+    "summary": "Message encrypted from alice → bob",
+    "details": {
+      "packetId": "146cf342-88d6-40e9-b1c3-43fb3b431864",
+      "from": "alice",
+      "to": "bob",
+      "payloadPreview": "qIgqLITniGDlzpLq85CGFRJdF7eCgXt4yF9RaY4P…",
+      "shardCount": 3
+    }
+  },
+  {
+    "id": "log-1774527304518-c4a3vp",
+    "ts": "2026-03-26T12:15:04.518Z",
+    "type": "shard",
+    "summary": "Message split into 3 shards",
+    "details": {
+      "packetId": "146cf342-88d6-40e9-b1c3-43fb3b431864",
+      "shardPreviews": [
+        {
+          "index": 1,
+          "preview": "qIgqLITniGDlzpLq85C…"
+        },
+        {
+          "index": 2,
+          "preview": "GFRJdF7eCgXt4yF9RaY…"
+        },
+        {
+          "index": 3,
+          "preview": "4PldTOSA0xhyv7Eg==…"
+        }
+      ]
+    }
+  },
+  {
+    "id": "log-1774527305025-po9ajd",
+    "ts": "2026-03-26T12:15:05.025Z",
+    "type": "block",
+    "summary": "Block #1 mined & anchored (nonce: 12055)",
+    "details": {
+      "blockIndex": 1,
+      "hash": "0008f3750329dbf493f44d78…",
+      "prevHash": "7f1ed78bb7d6abdc7022a6b8…",
+      "txCount": 1,
+      "nonce": 12055
+    }
+  },
+  {
+    "id": "log-1774527372703-rgg29m",
+    "ts": "2026-03-26T12:16:12.703Z",
+    "type": "shard",
+    "summary": "5 file shards distributed across relay nodes",
+    "details": {
+      "fileId": "0f3adb3c-8128-40c0-958c-b98ecd5f5f04",
+      "nodes": [
+        "node-alpha",
+        "node-beta",
+        "node-gamma",
+        "node-delta",
+        "node-epsilon"
+      ],
+      "shardSizes": [
+        {
+          "node": "node-alpha",
+          "bytes": 14104
+        },
+        {
+          "node": "node-beta",
+          "bytes": 14104
+        },
+        {
+          "node": "node-gamma",
+          "bytes": 14104
+        },
+        {
+          "node": "node-delta",
+          "bytes": 14104
+        },
+        {
+          "node": "node-epsilon",
+          "bytes": 14104
+        }
+      ]
+    }
+  },
+  {
+    "id": "log-1774527372720-42kbpx",
+    "ts": "2026-03-26T12:16:12.720Z",
+    "type": "file",
+    "summary": "File \"Python_Fundamentals.pdf\" encrypted by alice → bob",
+    "details": {
+      "fileId": "0f3adb3c-8128-40c0-958c-b98ecd5f5f04",
+      "fileName": "Python_Fundamentals.pdf",
+      "fileSize": 52868,
+      "fileHash": "3636dff8a11670d42083a33f…",
+      "from": "alice",
+      "to": "bob"
+    }
+  },
+  {
+    "id": "log-1774527372945-gzai2m",
+    "ts": "2026-03-26T12:16:12.945Z",
+    "type": "block",
+    "summary": "Block #2 mined & anchored (nonce: 6266)",
+    "details": {
+      "blockIndex": 2,
+      "hash": "000cb1562ae289665c85cc6d…",
+      "prevHash": "0008f3750329dbf493f44d78…",
+      "txCount": 1,
+      "nonce": 6266
+    }
+  }
+]

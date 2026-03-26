@@ -1,0 +1,15 @@
+[
+  {
+    "id": "146cf342-88d6-40e9-b1c3-43fb3b431864",
+    "from": "alice",
+    "to": "bob",
+    "ts": "2026-03-26T12:15:04.465Z",
+    "payload": "qIgqLITniGDlzpLq85CGFRJdF7eCgXt4yF9RaY4PldTOSA0xhyv7Eg==",
+    "iv": "6r/DiqCRiJYvD2Ct",
+    "shards": [
+      "qIgqLITniGDlzpLq85C",
+      "GFRJdF7eCgXt4yF9RaY",
+      "4PldTOSA0xhyv7Eg=="
+    ]
+  }
+]

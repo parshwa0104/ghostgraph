@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="GhostGraph — End-to-end encrypted messaging with blockchain-anchored proof of delivery. Your privacy, your way." />
+    <title>GhostGraph — Private Messaging</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <div class="logo-group">
+          <svg class="ghost-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M32 4C18.7 4 8 14.7 8 28v24c0 2 1.2 3.2 2.6 2.4l5.4-3.2 5.4 3.8c1 .7 2.2.7 3.2 0L30 51.6l5.4 3.4c1 .7 2.2.7 3.2 0l5.4-3.4 5.4 3.2c1.4.8 2.6-.4 2.6-2.4V28C56 14.7 45.3 4 32 4z" fill="url(#ghost-grad)" fill-opacity="0.9"/>
+            <circle cx="24" cy="28" r="4" fill="#0a0a14"/>
+            <circle cx="40" cy="28" r="4" fill="#0a0a14"/>
+            <circle cx="25" cy="27" r="1.5" fill="#00dcff"/>
+            <circle cx="41" cy="27" r="1.5" fill="#00dcff"/>
+            <defs>
+              <linearGradient id="ghost-grad" x1="8" y1="4" x2="56" y2="56">
+                <stop offset="0%" stop-color="#00dcff"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <h1>GhostGraph</h1>
+        </div>
+        <p>Your privacy, your way.</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="connection-badge" id="connection-badge" title="Server status">
+          <span class="status-dot offline"></span>
+          <span class="status-text">Offline</span>
+        </div>
+        <button id="overlay-toggle" class="ghost" aria-label="Toggle Clone-Gram overlay skin">Clone-Gram Overlay: Off</button>
+        <button id="clear-data" class="danger" aria-label="Reset all local data">Reset All Data</button>
+      </div>
+    </header>
+
+    <main>
+      <div id="banner" class="banner" aria-live="polite"></div>
+
+      <section class="workspace-shell">
+        <aside class="rail panel" aria-label="Workspace navigation">
+          <h2>Menu</h2>
+          <div class="rail-nav" id="view-nav" role="tablist">
+            <button class="view-link is-active" data-view="chat" role="tab" aria-selected="true">💬 Messages</button>
+            <button class="view-link" data-view="files" role="tab" aria-selected="false">📁 Files</button>
+            <button class="view-link" data-view="identity" role="tab" aria-selected="false">👤 Contacts</button>
+            <button class="view-link" data-view="exchange" role="tab" aria-selected="false">🔗 Share Keys</button>
+            <button class="view-link" data-view="chain" role="tab" aria-selected="false">🧱 Blockchain</button>
+            <button class="view-link" data-view="vault" role="tab" aria-selected="false">💾 Backup</button>
+            <button class="view-link" data-view="admin" role="tab" aria-selected="false">📊 Admin Log</button>
+          </div>
+          <div class="rail-hint muted">Tip: press 1–7 to switch screens.</div>
+        </aside>
+
+        <section class="view-stack">
+          <!-- ─── Messages ─── -->
+          <article class="panel view is-active" data-view-panel="chat" role="tabpanel">
+            <h2>Messages</h2>
+            <p class="muted">Send private, end-to-end encrypted messages. Only you and your recipient can read them.</p>
+            <div class="compose-grid">
+              <label>
+                From
+                <select id="active-user" aria-label="Select sender"></select>
+              </label>
+              <label>
+                To
+                <select id="recipient-user" aria-label="Select recipient"></select>
+              </label>
+            </div>
+
+            <label>
+              Your message
+              <textarea id="message-input" rows="3" placeholder="Type a private message…" maxlength="5000" autocomplete="off"></textarea>
+            </label>
+
+            <button id="send-message" class="btn-primary" aria-label="Send encrypted message">
+              <span class="btn-icon">🔒</span> Send Encrypted
+            </button>
+
+            <h3>Conversation</h3>
+            <ul id="inbox-log" class="inbox" aria-label="Decrypted message thread">
+              <li class="empty-state">
+                <div class="empty-icon">💬</div>
+                <p>No messages yet. Start a conversation!</p>
+              </li>
+            </ul>
+          </article>
+
+          <!-- ─── Files ─── -->
+          <article class="panel view" data-view-panel="files" role="tabpanel">
+            <h2>Encrypted File Sharing</h2>
+            <p class="muted">Files are encrypted end-to-end, split into 5 pieces, and stored across separate relay nodes. No single node holds your data.</p>
+
+            <div class="compose-grid">
+              <label>
+                From
+                <select id="file-from" aria-label="File sender"></select>
+              </label>
+              <label>
+                To
+                <select id="file-to" aria-label="File recipient"></select>
+              </label>
+            </div>
+
+            <div class="file-drop-zone" id="file-drop-zone" role="button" tabindex="0" aria-label="Drag and drop or click to select a file (max 5MB)">
+              <div class="file-drop-icon">📁</div>
+              <p>Drag & drop a file here, or <strong>click to browse</strong></p>
+              <p class="muted">Max 5 MB • All file types supported • Fully encrypted</p>
+              <input type="file" id="file-input" hidden />
+            </div>
+
+            <div class="file-progress" id="file-progress" hidden>
+              <div class="file-progress-label" id="file-progress-label">Encrypting...</div>
+              <div class="file-progress-bar">
+                <div class="file-progress-fill" id="file-progress-fill"></div>
+              </div>
+            </div>
+
+            <h3>Shared Files</h3>
+            <div id="file-list" class="file-list" aria-label="Encrypted file transfers">
+              <div class="empty-state">
+                <div class="empty-icon">📄</div>
+                <p>No files shared yet. Drag a file above to get started.</p>
+              </div>
+            </div>
+          </article>
+
+          <!-- ─── Contacts ─── -->
+          <article class="panel view" data-view-panel="identity" role="tabpanel">
+            <h2>Your Contacts</h2>
+            <p class="muted">Manage encryption keys for each contact. Keys stay on your device only.</p>
+            <div id="identity-list" class="identity-list"></div>
+            <div class="token-bar" id="token-bar" aria-label="Privacy token balances"></div>
+          </article>
+
+          <!-- ─── Share Keys ─── -->
+          <article class="panel view" data-view-panel="exchange" role="tabpanel">
+            <h2>Share Your Key</h2>
+            <p class="muted">Share your public key with friends via QR code or by pasting it.</p>
+            <label>
+              Contact to share
+              <select id="qr-contact-select" aria-label="Select contact to share key for"></select>
+            </label>
+            <div class="qr-wrap">
+              <canvas id="qr-canvas" width="160" height="160" aria-label="QR code for key exchange"></canvas>
+            </div>
+            <label>
+              Key payload
+              <textarea id="qr-payload" rows="2" readonly autocomplete="off"></textarea>
+            </label>
+            <button id="copy-qr-payload" class="ghost" aria-label="Copy key payload to clipboard">📋 Copy Key</button>
+
+            <hr />
+
+            <h3>Import a Friend's Key</h3>
+            <label>
+              Paste their key payload
+              <textarea id="qr-import-input" rows="2" placeholder="Paste key from your friend…" autocomplete="off"></textarea>
+            </label>
+            <label>
+              Save to contact
+              <select id="qr-import-target" aria-label="Select contact to import key for"></select>
+            </label>
+            <button id="qr-import-btn" aria-label="Apply imported key">Import Key</button>
+          </article>
+
+          <!-- ─── Blockchain ─── -->
+          <article class="panel view" data-view-panel="chain" role="tabpanel">
+            <h2>Blockchain Explorer</h2>
+            <p class="muted">
+              Every encrypted message is anchored on a tamper-proof blockchain. Height:
+              <strong id="chain-height">0</strong> blocks
+            </p>
+            <div class="log dual" id="chain-log"></div>
+
+            <h3>Relay Network</h3>
+            <p class="muted">The relay sees only encrypted shards — never your actual messages.</p>
+            <div id="relay-log" class="log"></div>
+          </article>
+
+          <!-- ─── Backup ─── -->
+          <article class="panel view" data-view-panel="vault" role="tabpanel">
+            <h2>Backup & Restore</h2>
+            <p class="muted">Save a password-protected backup of all your keys, messages, and chain data.</p>
+
+            <h3>Create Backup</h3>
+            <label>
+              Backup password
+              <input id="vault-pass" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+            </label>
+            <div class="strength-meter" aria-hidden="true">
+              <div class="strength-meter-fill" id="strength-fill"></div>
+            </div>
+            <div class="strength-label muted" id="strength-label"></div>
+            <button id="export-vault" aria-label="Export encrypted vault archive">💾 Create Backup</button>
+
+            <hr />
+
+            <h3>Restore from Backup</h3>
+            <div class="vault-import-zone" id="vault-import-zone" role="button" tabindex="0" aria-label="Click or drag to import vault file">
+              <p class="muted">Click to select a <strong>.ghostvault</strong> file</p>
+              <input type="file" id="vault-import-file" accept=".ghostvault" hidden />
+            </div>
+            <label>
+              Backup password
+              <input id="vault-import-pass" type="password" placeholder="Enter backup password" autocomplete="off" />
+            </label>
+            <button id="import-vault" aria-label="Import and decrypt vault archive">📥 Restore Backup</button>
+          </article>
+
+          <!-- ─── Admin Log ─── -->
+          <article class="panel view" data-view-panel="admin" role="tabpanel">
+            <h2>Admin Activity Log</h2>
+            <p class="muted">Real-time log of all encryption, sharding, and blockchain activity on the server.</p>
+            <div class="admin-toolbar">
+              <button id="admin-refresh" class="ghost" aria-label="Refresh admin log">🔄 Refresh</button>
+              <button id="admin-clear" class="ghost danger-text" aria-label="Clear admin log">🗑️ Clear Log</button>
+              <label class="admin-auto-refresh">
+                <input type="checkbox" id="admin-auto-refresh-toggle" checked />
+                Auto-refresh
+              </label>
+            </div>
+            <div id="admin-log-list" class="admin-log-list" aria-label="Server activity log">
+              <div class="empty-state">
+                <div class="empty-icon">📊</div>
+                <p>No activity yet. Send a message or file to see encryption events here.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <small>
+        Educational prototype — not for production use. Demonstrates E2EE concepts, shard distribution, and blockchain anchoring.
+      </small>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

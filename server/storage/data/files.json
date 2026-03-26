@@ -1,0 +1,21 @@
+[
+  {
+    "id": "0f3adb3c-8128-40c0-958c-b98ecd5f5f04",
+    "type": "file",
+    "from": "alice",
+    "to": "bob",
+    "ts": "2026-03-26T12:16:12.711Z",
+    "fileName": "Python_Fundamentals.pdf",
+    "fileSize": 52868,
+    "fileHash": "3636dff8a11670d42083a33f3bcd5cb70f00c81f2b368aa037e40e853ec4cc3e",
+    "iv": "bWUoeO0OIXgQngte",
+    "shardCount": 5,
+    "relayNodes": [
+      "node-alpha",
+      "node-beta",
+      "node-gamma",
+      "node-delta",
+      "node-epsilon"
+    ]
+  }
+]
