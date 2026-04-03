@@ -1,0 +1,90 @@
+# GhostGraph Walkthrough & Future Upgrades
+
+Welcome to GhostGraph! This document provides a walkthrough of each feature in the current application, explaining how the interface works and what happens securely behind the scenes. It also outlines potential future upgrades to harden the application for production use.
+
+## Feature Walkthrough
+
+### 💬 Messages (Encrypted Chat)
+**What it does:** Allows users to send private, end-to-end encrypted (E2EE) messages.
+**How it works:**
+1. You select a sender (e.g., Alice) and a recipient (e.g., Bob).
+2. When you type a message and click **Send Encrypted**, the app uses the encryption keys of both users to derive a shared secret.
+3. The message is encrypted using AES-GCM *before* it leaves your browser.
+4. The encrypted data (ciphertext) is split into multiple shards.
+5. The shards are sent to the backend relay, and the event is anchored on the blockchain.
+6. The recipient's client fetches the shards, reassembles them, and uses their key to decrypt and read the message.
+
+![Messages View Sending a Message](C:\Users\PARSHWA\.gemini\antigravity\brain\6e5a5971-1c8e-4223-a41b-51670c285e0a\messages_view_sent_message_1774527312796.png)
+
+### 📁 Files (Encrypted File Sharing)
+**What it does:** Securely shares files up to 5MB without the server ever seeing the file contents.
+**How it works:**
+1. You drag and drop a file into the upload zone.
+2. The browser reads the file and generates a unique fingerprint (SHA-256 hash).
+3. The file is encrypted entirely in the browser using a shared key.
+4. The encrypted file is split into 5 distinct pieces (shards).
+5. These shards are distributed across 5 simulated relay nodes. No single node has enough data to reconstruct the file.
+6. The recipient collects all 5 shards, reassembles them, decrypts the file, verifies the fingerprint to ensure integrity, and downloads it.
+
+### 👤 Contacts (Identity Vault)
+**What it does:** Manages the cryptographic keys for your contacts.
+**How it works:**
+- Instead of relying on a central server to manage passwords, GhostGraph stores public/private keys locally on your device.
+- You can generate new keys for contacts with a single click.
+- The **Privacy Token Bar** at the bottom shows how many tokens each user has earned by participating in the network (e.g., sending messages or files).
+
+### 🔗 Share Keys (QR Exchange)
+**What it does:** A secure method for exchanging public keys with friends out-of-band.
+**How it works:**
+- To start an encrypted chat, both parties need to exchange keys.
+- You can show your friend your QR code (or copy the text payload) for them to import into their app.
+- This prevents "Man-in-the-Middle" attacks because you control how the key is shared (e.g., in person, via a secure signal message, etc.).
+
+### 🧱 Blockchain (GhostChain Explorer)
+**What it does:** Provides a tamper-proof record of activity.
+**How it works:**
+- Every time a message or file is sent, a cryptographic hash representing that event is created.
+- This hash is "mined" into a block (complete with a nonce to satisfy difficulty requirements).
+- This creates an immutable proof that communication happened at a specific time, without revealing *what* was communicated.
+- The **Relay Network** view below the blockchain shows the raw encrypted shards passing through the server.
+
+### 💾 Backup (Vault-Sync)
+**What it does:** Creates a secure, password-protected backup of your identity keys, messages, and chain data.
+**How it works:**
+- Because GhostGraph is decentralized and client-focused, losing your browser data means losing your identity.
+- You can export a `.ghostvault` file encrypted with a strong password (using PBKDF2 password stretching and AES-GCM).
+- You can restore this file later on a new device by providing the same password.
+
+### 📊 Admin Log
+**What it does:** A real-time developer/admin view illustrating the server-side operations.
+**How it works:**
+- Whenever the frontend interacts with the backend (sending a message, sharing a file, anchoring a block), the server logs the event.
+- This panel proves the "zero-knowledge" nature of the application: the server only logs ciphertexts, shard fragments, and hashes. It never sees plaintext messages or file contents.
+
+![Admin Log View Panel](C:\Users\PARSHWA\.gemini\antigravity\brain\6e5a5971-1c8e-4223-a41b-51670c285e0a\admin_log_panel_1774527322571.png)
+
+---
+
+## Possible Future Upgrades
+
+While GhostGraph is a strong conceptual prototype for privacy-first communication, several upgrades are necessary to make it production-ready.
+
+### 1. Robust Cryptography & Key Management
+- **Elliptic Curve Cryptography (ECC):** Transition from simple symmetric shared keys to proper asymmetric encryption (e.g., Curve25519) using the Signal Protocol (Double Ratchet algorithm) for Perfect Forward Secrecy (PFS).
+- **Key Discovery Server:** Implement a verifiable, blind operation key-server so users don't have to manually exchange keys via QR payloads every time.
+- **Hardware Security:** Integrate with WebAuthn or hardware security modules (YubiKey, Secure Enclave) for signing and key protection.
+
+### 2. Advanced Sharding & Routing
+- **Erasure Coding (Reed-Solomon):** Currently, receiving a file requires all 5 shards. Implement erasure coding so that a file can be reconstructed even if some relay nodes go offline (e.g., require 3 out of 5 shards).
+- **Onion Routing / Tor Integration:** Route shards through a mix-net similar to Tor to obscure metadata (who is talking to whom) in addition to encrypting the payload.
+- **True P2P Network:** Replace the simulated Express.js relay nodes with true WebRTC or Libp2p decentralized nodes.
+
+### 3. Application Features
+- **Group Chats:** Implement Sender Keys (like WhatsApp/Signal) to allow efficient encrypted group messaging without needing to encrypt the same message N times.
+- **Ephemeral Messages:** Add self-destructing messages that definitively delete keys and ciphertexts after a certain time limit.
+- **Voice / Video:** Add WebRTC-based end-to-end encrypted audio and video calling.
+- **Push Notifications:** Implement privacy-preserving push notifications using a service like UnifiedPush, sending only a "wake up" ping without payload data.
+
+### 4. Infrastructure & Scalability
+- **Database Backend:** Move away from local JSON file storage on the server to a robust, scalable database (e.g., PostgreSQL or MongoDB) for managing encrypted packets and the blockchain.
+- **Authentication:** While the app is decentralized, adding optional Zero-Knowledge Proof (ZKP) authentication for rate-limiting and anti-spam measures.

@@ -1,98 +1,123 @@
-/* ── JSON File Storage Engine ── */
+/* ── MongoDB Storage Engine Bridge ── */
 
-const fs = require("fs");
-const path = require("path");
+const Packet = require("../models/Packet");
+const File = require("../models/File");
+const ChainBlock = require("../models/ChainBlock");
+const Reward = require("../models/Reward");
+const AdminLog = require("../models/AdminLog");
 
-const DATA_DIR = path.join(__dirname, "data");
+const modelMap = {
+  "packets.json": Packet,
+  "files.json": File,
+  "chain.json": ChainBlock,
+  "rewards.json": Reward,
+  "admin-log.json": AdminLog,
+};
 
-// Ensure data directories exist
-function ensureDataDirs() {
-  const dirs = [DATA_DIR, path.join(DATA_DIR, "shards")];
-  for (const dir of dirs) {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  }
-}
-
-ensureDataDirs();
-
-/**
- * Read a JSON data file. Returns default value if file doesn't exist.
- */
-function read(filename, defaultValue = []) {
-  const filePath = path.join(DATA_DIR, filename);
+async function read(filename, defaultValue = []) {
+  const Model = modelMap[filename];
+  if (!Model) return defaultValue;
   try {
-    if (!fs.existsSync(filePath)) {
-      return defaultValue;
+    if (filename === "chain.json") {
+      const docs = await Model.find().sort({ index: 1 });
+      return docs.map(d => { const obj = d.toObject(); delete obj._id; delete obj.__v; return obj; });
+    } else if (filename === "rewards.json") {
+      const rewards = await Model.find();
+      const obj = {};
+      rewards.forEach((r) => { obj[r.user] = r.tokens; });
+      return obj; // Return object format to match legacy
+    } else {
+      const docs = await Model.find().sort({ createdAt: 1 });
+      return docs.map(d => { const obj = d.toObject(); delete obj._id; delete obj.__v; return obj; });
     }
-    const raw = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(raw);
-  } catch {
+  } catch (err) {
+    console.error("Store read error:", err);
     return defaultValue;
   }
 }
 
-/**
- * Write data to a JSON file atomically.
- */
-function write(filename, data) {
-  const filePath = path.join(DATA_DIR, filename);
-  const tmp = filePath + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
-  fs.renameSync(tmp, filePath);
-}
-
-/**
- * Append an item to a JSON array file.
- */
-function append(filename, item) {
-  const arr = read(filename, []);
-  arr.push(item);
-  write(filename, arr);
-  return arr;
-}
-
-/* ── Shard Storage ── */
-
-function writeShard(packetId, nodeName, base64Data) {
-  const shardDir = path.join(DATA_DIR, "shards", packetId);
-  if (!fs.existsSync(shardDir)) {
-    fs.mkdirSync(shardDir, { recursive: true });
+async function write(filename, data) {
+  const Model = modelMap[filename];
+  if (!Model) return;
+  try {
+    if (filename === "rewards.json") {
+      for (const [user, tokens] of Object.entries(data)) {
+        await Model.findOneAndUpdate({ user }, { tokens }, { upsert: true });
+      }
+    } else {
+      await Model.deleteMany({});
+      if (Array.isArray(data) && data.length > 0) {
+        await Model.insertMany(data);
+      }
+    }
+  } catch (err) {
+    console.error("Store write error:", err);
   }
-  fs.writeFileSync(path.join(shardDir, `${nodeName}.shard`), base64Data, "utf-8");
 }
 
-function readShard(packetId, nodeName) {
-  const shardPath = path.join(DATA_DIR, "shards", packetId, `${nodeName}.shard`);
-  if (!fs.existsSync(shardPath)) {
-    return null;
-  }
-  return fs.readFileSync(shardPath, "utf-8");
-}
-
-function readAllShards(packetId) {
-  const shardDir = path.join(DATA_DIR, "shards", packetId);
-  if (!fs.existsSync(shardDir)) {
+async function append(filename, item) {
+  const Model = modelMap[filename];
+  if (!Model) return [];
+  try {
+    await Model.create(item);
+    return await read(filename);
+  } catch (err) {
+    console.error("Store append error:", err);
     return [];
   }
-  const files = fs.readdirSync(shardDir).filter((f) => f.endsWith(".shard"));
-  return files.map((f) => ({
-    node: f.replace(".shard", ""),
-    data: fs.readFileSync(path.join(shardDir, f), "utf-8"),
-  }));
 }
 
-function clearAllData() {
-  const files = ["packets.json", "files.json", "chain.json", "rewards.json"];
-  for (const f of files) {
-    const p = path.join(DATA_DIR, f);
-    if (fs.existsSync(p)) fs.unlinkSync(p);
+/* ── Shard Storage (Embedded in File docs) ── */
+
+async function writeShard(packetId, nodeName, base64Data) {
+  try {
+    const file = await File.findOne({ id: packetId });
+    if (!file) return;
+    
+    const existingIndex = file.shardsData.findIndex(s => s.node === nodeName);
+    if (existingIndex >= 0) {
+      file.shardsData[existingIndex].data = base64Data;
+    } else {
+      file.shardsData.push({ node: nodeName, data: base64Data });
+    }
+    await file.save();
+  } catch (err) {
+    console.error("Store writeShard error:", err);
   }
-  const shardDir = path.join(DATA_DIR, "shards");
-  if (fs.existsSync(shardDir)) {
-    fs.rmSync(shardDir, { recursive: true, force: true });
-    fs.mkdirSync(shardDir, { recursive: true });
+}
+
+async function readShard(packetId, nodeName) {
+  try {
+    const file = await File.findOne({ id: packetId });
+    if (!file) return null;
+    const shard = file.shardsData.find(s => s.node === nodeName);
+    return shard ? shard.data : null;
+  } catch (err) {
+    console.error("Store readShard error:", err);
+    return null;
+  }
+}
+
+async function readAllShards(packetId) {
+  try {
+    const file = await File.findOne({ id: packetId });
+    if (!file) return [];
+    return file.shardsData.map(s => ({ node: s.node, data: s.data }));
+  } catch (err) {
+    console.error("Store readAllShards error:", err);
+    return [];
+  }
+}
+
+async function clearAllData() {
+  try {
+    await Packet.deleteMany({});
+    await File.deleteMany({});
+    await ChainBlock.deleteMany({});
+    await Reward.deleteMany({});
+    await AdminLog.deleteMany({});
+  } catch (err) {
+    console.error("Store clearAllData error:", err);
   }
 }
 

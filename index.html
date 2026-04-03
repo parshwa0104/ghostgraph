@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="GhostGraph — End-to-end encrypted messaging with blockchain-anchored proof of delivery. Your privacy, your way." />
-    <title>GhostGraph — Private Messaging</title>
+    <meta name="description" content="GhostGraph — End-to-end encrypted payments with blockchain-anchored proof of delivery. Your privacy, your way." />
+    <title>GhostGraph</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -45,7 +45,7 @@
         <aside class="rail panel" aria-label="Workspace navigation">
           <h2>Menu</h2>
           <div class="rail-nav" id="view-nav" role="tablist">
-            <button class="view-link is-active" data-view="chat" role="tab" aria-selected="true">💬 Messages</button>
+            <button class="view-link is-active" data-view="chat" role="tab" aria-selected="true">Payments</button>
             <button class="view-link" data-view="files" role="tab" aria-selected="false">📁 Files</button>
             <button class="view-link" data-view="identity" role="tab" aria-selected="false">👤 Contacts</button>
             <button class="view-link" data-view="exchange" role="tab" aria-selected="false">🔗 Share Keys</button>
@@ -59,8 +59,8 @@
         <section class="view-stack">
           <!-- ─── Messages ─── -->
           <article class="panel view is-active" data-view-panel="chat" role="tabpanel">
-            <h2>Messages</h2>
-            <p class="muted">Send private, end-to-end encrypted messages. Only you and your recipient can read them.</p>
+            <h2>Payments</h2>
+            <p class="muted">Send private, end-to-end encrypted payments. Only you and your recipient can read them.</p>
             <div class="compose-grid">
               <label>
                 From
@@ -73,7 +73,7 @@
             </div>
 
             <label>
-              Your message
+              Amount
               <textarea id="message-input" rows="3" placeholder="Type a private message…" maxlength="5000" autocomplete="off"></textarea>
             </label>
 
@@ -81,11 +81,11 @@
               <span class="btn-icon">🔒</span> Send Encrypted
             </button>
 
-            <h3>Conversation</h3>
+            <h3>Payment History</h3>
             <ul id="inbox-log" class="inbox" aria-label="Decrypted message thread">
               <li class="empty-state">
                 <div class="empty-icon">💬</div>
-                <p>No messages yet. Start a conversation!</p>
+                <p>No payments yet</p>
               </li>
             </ul>
           </article>
@@ -216,18 +216,33 @@
           <article class="panel view" data-view-panel="admin" role="tabpanel">
             <h2>Admin Activity Log</h2>
             <p class="muted">Real-time log of all encryption, sharding, and blockchain activity on the server.</p>
-            <div class="admin-toolbar">
-              <button id="admin-refresh" class="ghost" aria-label="Refresh admin log">🔄 Refresh</button>
-              <button id="admin-clear" class="ghost danger-text" aria-label="Clear admin log">🗑️ Clear Log</button>
-              <label class="admin-auto-refresh">
-                <input type="checkbox" id="admin-auto-refresh-toggle" checked />
-                Auto-refresh
+
+            <div id="admin-login-view" style="max-width:320px; margin: 2rem 0;">
+              <label>
+                Admin Username
+                <input type="text" id="admin-user" placeholder="Username" autocomplete="username" />
               </label>
+              <label>
+                Admin Password
+                <input type="password" id="admin-pass" placeholder="Password" autocomplete="current-password" />
+              </label>
+              <button id="admin-login-btn" class="btn-primary" style="width:100%; margin-top:0.5rem;">Authenticate</button>
             </div>
-            <div id="admin-log-list" class="admin-log-list" aria-label="Server activity log">
-              <div class="empty-state">
-                <div class="empty-icon">📊</div>
-                <p>No activity yet. Send a message or file to see encryption events here.</p>
+
+            <div id="admin-content-view" hidden>
+              <div class="admin-toolbar">
+                <button id="admin-refresh" class="ghost" aria-label="Refresh admin log">🔄 Refresh</button>
+                <button id="admin-clear" class="ghost danger-text" aria-label="Clear admin log">🗑️ Clear Log</button>
+                <label class="admin-auto-refresh">
+                  <input type="checkbox" id="admin-auto-refresh-toggle" checked />
+                  Auto-refresh
+                </label>
+              </div>
+              <div id="admin-log-list" class="admin-log-list" aria-label="Server activity log">
+                <div class="empty-state">
+                  <div class="empty-icon">📊</div>
+                  <p>No activity yet. Send a message or file to see encryption events here.</p>
+                </div>
               </div>
             </div>
           </article>

@@ -3,7 +3,8 @@
    Backend-integrated + Admin Log + Friendly UI
    ═══════════════════════════════════════════════════════════ */
 
-const API_BASE = "/api";
+const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.protocol === "file:";
+const API_BASE = isLocal ? "http://localhost:3000/api" : "/api";
 const CONTACTS = ["alice", "bob", "charlie"];
 const STORAGE = {
   keys: "ghostgraph-v3-keys",
@@ -26,6 +27,7 @@ const state = {
   serverOnline: false,
   adminAutoRefresh: true,
   adminRefreshTimer: null,
+  adminAuthToken: null,
 };
 
 /* ────────── API Helpers ────────── */
@@ -36,9 +38,15 @@ async function api(method, path, body = null) {
       method,
       headers: { "Content-Type": "application/json" },
     };
+    if (state.adminAuthToken && path.startsWith("/admin")) {
+      opts.headers["Authorization"] = `Basic ${state.adminAuthToken}`;
+    }
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(`${API_BASE}${path}`, opts);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      if (res.status === 401) return { error: "Unauthorized" };
+      throw new Error(`HTTP ${res.status}`);
+    }
     return await res.json();
   } catch (err) {
     console.warn(`[API] ${method} ${path} failed:`, err.message);
@@ -116,6 +124,11 @@ const els = {
   adminRefresh: document.getElementById("admin-refresh"),
   adminClear: document.getElementById("admin-clear"),
   adminAutoRefreshToggle: document.getElementById("admin-auto-refresh-toggle"),
+  adminUser: document.getElementById("admin-user"),
+  adminPass: document.getElementById("admin-pass"),
+  adminLoginBtn: document.getElementById("admin-login-btn"),
+  adminLoginView: document.getElementById("admin-login-view"),
+  adminContentView: document.getElementById("admin-content-view"),
 };
 
 boot();
@@ -310,6 +323,20 @@ function wireEvents() {
 /* ────────── Admin Log Events ────────── */
 
 function wireAdminEvents() {
+  els.adminLoginBtn.addEventListener("click", () => {
+    const u = els.adminUser.value.trim();
+    const p = els.adminPass.value;
+    if (!u || !p) {
+      showNotice("Please enter username and password.", true);
+      return;
+    }
+    state.adminAuthToken = btoa(`${u}:${p}`);
+    els.adminLoginView.hidden = true;
+    els.adminContentView.hidden = false;
+    renderAdminLog();
+    if (state.adminAutoRefresh) startAdminAutoRefresh();
+  });
+
   els.adminRefresh.addEventListener("click", () => renderAdminLog());
   els.adminClear.addEventListener("click", async () => {
     if (!confirm("Clear the admin activity log?")) return;
@@ -380,8 +407,16 @@ function setView(view) {
     panel.classList.toggle("is-active", panel.dataset.viewPanel === view);
   });
   if (view === "admin") {
-    renderAdminLog();
-    if (state.adminAutoRefresh) startAdminAutoRefresh();
+    if (!state.adminAuthToken) {
+      els.adminLoginView.hidden = false;
+      els.adminContentView.hidden = true;
+      stopAdminAutoRefresh();
+    } else {
+      els.adminLoginView.hidden = true;
+      els.adminContentView.hidden = false;
+      renderAdminLog();
+      if (state.adminAutoRefresh) startAdminAutoRefresh();
+    }
   } else {
     stopAdminAutoRefresh();
   }
@@ -585,12 +620,20 @@ async function renderAdminLog() {
   }
 
   const result = await api("GET", "/admin/log");
-  if (!result || !result.log) {
-    els.adminLogList.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📊</div>
-        <p>Could not fetch logs from server.</p>
-      </div>`;
+  if (!result || result.error || !result.log) {
+    if (result?.error === "Unauthorized") {
+      state.adminAuthToken = null;
+      els.adminLoginView.hidden = false;
+      els.adminContentView.hidden = true;
+      stopAdminAutoRefresh();
+      showNotice("Invalid or expired admin credentials.", true);
+    } else {
+      els.adminLogList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <p>Could not fetch logs from server.</p>
+        </div>`;
+    }
     return;
   }
 

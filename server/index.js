@@ -4,6 +4,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 require("dotenv").config();
+const connectDB = require('./config/db');
 
 const express = require("express");
 const cors = require("cors");
@@ -18,6 +19,9 @@ const rewardRoutes = require("./routes/rewards");
 const adminRoutes = require("./routes/admin");
 
 const app = express();
+// Connect to MongoDB
+connectDB();
+
 const PORT = process.env.PORT || 3000;
 
 /* ── Middleware ── */

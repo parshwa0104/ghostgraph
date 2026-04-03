@@ -9,9 +9,9 @@ const PACKETS_FILE = "packets.json";
  * GET /api/packets?from=X&to=Y
  * Returns packets between two users (bidirectional).
  */
-function getPackets(req, res) {
+async function getPackets(req, res) {
   const { from, to } = req.query;
-  const all = store.read(PACKETS_FILE, []);
+  const all = await store.read(PACKETS_FILE, []);
 
   if (from && to) {
     const filtered = all.filter(
@@ -27,7 +27,7 @@ function getPackets(req, res) {
  * POST /api/packets
  * Store a new encrypted packet.
  */
-function createPacket(req, res) {
+async function createPacket(req, res) {
   const packet = {
     id: req.body.id,
     from: req.body.from,
@@ -38,10 +38,10 @@ function createPacket(req, res) {
     shards: req.body.shards || [],
   };
 
-  store.append(PACKETS_FILE, packet);
+  await store.append(PACKETS_FILE, packet);
 
   // Admin log — message encrypted & sharded
-  logActivity("encryption", `Message encrypted from ${packet.from} → ${packet.to}`, {
+  await logActivity("encryption", `Message encrypted from ${packet.from} → ${packet.to}`, {
     packetId: packet.id,
     from: packet.from,
     to: packet.to,
@@ -50,7 +50,7 @@ function createPacket(req, res) {
   });
 
   if (packet.shards.length > 0) {
-    logActivity("shard", `Message split into ${packet.shards.length} shards`, {
+    await logActivity("shard", `Message split into ${packet.shards.length} shards`, {
       packetId: packet.id,
       shardPreviews: packet.shards.map((s, i) => ({
         index: i + 1,

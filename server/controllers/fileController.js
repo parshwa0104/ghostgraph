@@ -9,9 +9,9 @@ const FILES_FILE = "files.json";
  * GET /api/files?from=X&to=Y
  * Returns file metadata between two users.
  */
-function getFiles(req, res) {
+async function getFiles(req, res) {
   const { from, to } = req.query;
-  const all = store.read(FILES_FILE, []);
+  const all = await store.read(FILES_FILE, []);
 
   if (from && to) {
     const filtered = all.filter(
@@ -27,7 +27,7 @@ function getFiles(req, res) {
  * POST /api/files
  * Store file metadata.
  */
-function createFile(req, res) {
+async function createFile(req, res) {
   const fileMeta = {
     id: req.body.id,
     type: "file",
@@ -42,10 +42,10 @@ function createFile(req, res) {
     relayNodes: req.body.relayNodes,
   };
 
-  store.append(FILES_FILE, fileMeta);
+  await store.append(FILES_FILE, fileMeta);
 
   // Admin log — file encrypted
-  logActivity("file", `File "${fileMeta.fileName}" encrypted by ${fileMeta.from} → ${fileMeta.to}`, {
+  await logActivity("file", `File "${fileMeta.fileName}" encrypted by ${fileMeta.from} → ${fileMeta.to}`, {
     fileId: fileMeta.id,
     fileName: fileMeta.fileName,
     fileSize: fileMeta.fileSize,
@@ -61,7 +61,7 @@ function createFile(req, res) {
  * POST /api/files/:id/shards
  * Store shards for a file. Body: { shards: [{ node, data }] }
  */
-function storeShards(req, res) {
+async function storeShards(req, res) {
   const { id } = req.params;
   const { shards } = req.body;
 
@@ -73,11 +73,11 @@ function storeShards(req, res) {
     if (!shard.node || !shard.data) {
       return res.status(400).json({ error: true, message: "Each shard needs node and data." });
     }
-    store.writeShard(id, shard.node, shard.data);
+    await store.writeShard(id, shard.node, shard.data);
   }
 
   // Admin log — shards distributed
-  logActivity("shard", `${shards.length} file shards distributed across relay nodes`, {
+  await logActivity("shard", `${shards.length} file shards distributed across relay nodes`, {
     fileId: id,
     nodes: shards.map((s) => s.node),
     shardSizes: shards.map((s) => ({ node: s.node, bytes: s.data.length })),
@@ -90,16 +90,16 @@ function storeShards(req, res) {
  * GET /api/files/:id/shards
  * Collect all shards for a file.
  */
-function getShards(req, res) {
+async function getShards(req, res) {
   const { id } = req.params;
-  const shards = store.readAllShards(id);
+  const shards = await store.readAllShards(id);
 
-  if (!shards.length) {
+  if (!shards || !shards.length) {
     return res.status(404).json({ error: true, message: "No shards found for this file." });
   }
 
   // Admin log — shards collected for download
-  logActivity("download", `File shards collected for download (${shards.length} shards)`, {
+  await logActivity("download", `File shards collected for download (${shards.length} shards)`, {
     fileId: id,
     shardCount: shards.length,
     nodes: shards.map((s) => s.node),
